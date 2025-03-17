@@ -1,0 +1,30 @@
+{
+	"compileOnSave": true,
+	"compilerOptions": {
+		"baseUrl": ".",
+        "experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		"declaration": true,
+		"removeComments": false,
+		"outDir": "./dist",
+		"esModuleInterop": true,
+        "lib": [
+            "dom",
+            "esnext"
+        ],
+		"module": "NodeNext",
+        "moduleResolution": "NodeNext",
+		"target": "ESNext"
+	},
+	"include": [
+        "./types/**/*",
+        "./server/**/*",
+		"./transform/**/*",
+        "./decorator/**/*",
+        "./storage/**/*"
+    ],
+	"exclude": [
+        "**/*.test.ts",
+		"node_modules"
+	]
+}
