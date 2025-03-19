@@ -93,7 +93,7 @@ export class Table<T extends AnyClass = AnyClass> {
         return this.select().allColumns()
     }
 
-    addColumn<C extends ColumnType>(name: string, type: C, def?: DefinitionOf<C>): Column<C> {
+    addColumn<C extends ColumnType>(name: string, type?: C, def?: DefinitionOf<C>): Column<C> {
         const column = new Column(name, type, def)
         this.column[name] = column
         this.columns.push(column)

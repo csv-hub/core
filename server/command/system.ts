@@ -27,6 +27,9 @@ export abstract class SystemCommand<D> {
 
 }
 
+/**
+ * List all databases
+ */
 export class ListDatabasesCommand extends SystemCommand<ClickHouseDatabase[]> {
 
     toString() {
@@ -48,7 +51,6 @@ export class ListTablesCommand extends SystemCommand<ClickHouseTable[]> {
     }
 
     parse({ data }) {
-        console.log(data)
         return data as ClickHouseTable[]
     }
 
@@ -58,9 +60,16 @@ export class ListTablesCommand extends SystemCommand<ClickHouseTable[]> {
 
 }
 
-export class ShowCommand {
-    
-    
+export class ShowTableCommand extends SystemCommand<any> {
+
+    toString() {
+        return `SHOW TABLE test_treasury`
+    }
+
+    parse({ data }) {
+        console.log(data)
+        return data
+    }
 
 }
 

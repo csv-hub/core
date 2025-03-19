@@ -21,6 +21,7 @@
         "./server/**/*",
 		"./transform/**/*",
         "./decorator/**/*",
+        "./csv/**/*",
         "./storage/**/*"
     ],
 	"exclude": [

@@ -15,6 +15,10 @@ describe('System command', () => {
         expect(databases.find((database) => database.name == 'system')).toBeDefined()
     })
 
+    it('should show a table', async () => {
+        const result = await db.showTable('test_treasury').execute()
+    })
+
     it('can drop the created database', async () => {
         // TODO
     })

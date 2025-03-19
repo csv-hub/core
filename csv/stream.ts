@@ -2,8 +2,8 @@ import fs from 'fs'
 import path from 'path'
 import csv from 'csv-parser'
 
-import type { Table } from '../../server'
-import type { AnyClass, AnyObject } from '../../server/types'
+import type { Table } from '../server'
+import type { AnyClass, AnyObject } from '../server/types'
 
 export async function streamInsertCSV<T extends AnyClass>(
     table: Table<T>, 
@@ -18,9 +18,17 @@ export async function streamInsertCSV<T extends AnyClass>(
 
     return new Promise((resolve, reject) => {
         let rows = 0
-        let batch: AnyObject[] = []
+        let ingested = 0
 
-        fs.createReadStream(csvFile)
+        let batch: AnyObject[] = []
+        function ingestBatch(ingest: AnyObject[]) {
+            rows += ingest.length
+            inserts.push(table.insertAny(ingest, batchSize).then(() => {
+                ingested += ingest.length
+            }))
+        }
+
+        const stream = fs.createReadStream(csvFile)
             .pipe(csv({
                 mapHeaders: ({ header }) => {
                     if (table.hasColumnCSV(header))
@@ -28,11 +36,12 @@ export async function streamInsertCSV<T extends AnyClass>(
                     else
                         return header
                 },
+
                 mapValues: ({ header, value }) => {
                     const column = table.getColumnByName(header)
                     if (column) {
                         try {
-                            return column.fromString(value)
+                            return column.transformFromString(value)
                         }
                         catch (error) {
                             if (typeof error === 'object' && error.code) {
@@ -55,13 +64,13 @@ export async function streamInsertCSV<T extends AnyClass>(
             .on('data', (data) => {
                 batch.push(data)
                 if (batch.length >= batchSize) {
-                    inserts.push(table.insertAny(batch, batchSize))
+                    ingestBatch(batch)
                     batch = []
                 }
             })
             .on('end', () => {
                 if (batch.length > 0)
-                    inserts.push(table.insertAny(batch, batchSize))
+                    ingestBatch(batch)
                 
                 Promise.all(inserts).then(() => {
                     resolve(rows)

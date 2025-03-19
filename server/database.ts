@@ -10,7 +10,8 @@ import {
 import { 
     ListDatabasesCommand, 
     ListTablesCommand, 
-    ListFunctionsCommand
+    ListFunctionsCommand,
+    ShowTableCommand
 } from './command/system'
 
 // Type imports
@@ -73,6 +74,10 @@ export class Database {
 
     listFunctions() {
         return new ListFunctionsCommand(this)
+    }
+
+    showTable(name: string) {
+        return new ShowTableCommand(this)
     }
 
     /**

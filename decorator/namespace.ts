@@ -62,9 +62,9 @@ declare global {
      * 
      * }
      */
-    function select(name: string): MethodDecorator
+    // function select(name: string): MethodDecorator
 
-    // TODO: return an object  
-    function asType(type: string, expr: string): any
-    function asNumber(): any
+    // // TODO: return an object  
+    // function asType(type: string, expr: string): any
+    // function asNumber(): any
 }
