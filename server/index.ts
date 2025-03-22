@@ -13,4 +13,5 @@ export * from './command/system'
 // Querying
 export * from './select/query'
 
+export { AnyClass, AnyObject } from './types'
 export * from './error'
