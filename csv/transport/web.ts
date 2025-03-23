@@ -1,6 +1,7 @@
 // File system
 import fs from 'fs'
 import path from 'path'
+import { URL } from 'url'
 import { execSync as exec } from 'child_process'
 
 // Networking
@@ -16,10 +17,12 @@ import { DownloadError } from './error'
  * Checks for a valid Internet connection
  * @returns 
  */
-export async function canTransportWeb(): Promise<boolean> {
+export async function canTransportWeb({ url }: WebSource): Promise<boolean> {
+    const parsed = new URL(url)
+
     return new Promise((resolve) => {
-        dns.resolve('google.com', (error) => {
-            resolve(!error)
+        dns.resolve(parsed.hostname, (error) => {
+            resolve(! error)
         })
     })
 }

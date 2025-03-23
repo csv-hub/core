@@ -15,6 +15,9 @@ export interface TransportDefinition<T extends TransportType> {
 
     // If set to false, will output tmp directory instead of deleting
     clean?: boolean
+
+    // If set to true, will print transport state to standard output
+    verbose?: boolean
 }
 
 export interface TransportDestination {

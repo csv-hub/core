@@ -26,7 +26,12 @@ import {
     transportS3Source
 } from './s3'
 
-const transportValidator: Record<TransportType, () => Promise<boolean>> = {
+import { displayDirectory } from '../util/display'
+
+// MAPPINGS OF CALLBACK FUNCTIONS
+// The following maps type check and organize the imports from each transport implementation.
+
+const transportValidator: { [T in TransportType]: (source: TransportSource<T>) => Promise<any> } = {
     dolt: canTransportDolt,
     web: canTransportWeb,
     s3: canTransportS3
@@ -52,13 +57,13 @@ const afterTransportSource: { [T in TransportType]: (source: TransportSource<T>,
  * @param type 
  * @returns 
  */
-export function getTransport<T extends TransportType>({ type, source, destination, clean }: TransportDefinition<T>) {
+export function getTransport<T extends TransportType>({ type, source, destination, clean, verbose }: TransportDefinition<T>) {
     // A working temporary directory for the transport
     const tmpdirName = path.join(os.tmpdir(), `csv-${ type }-`)
     const sources = Array.isArray(source) ? source : [ source ]
     const destinations = Array.isArray(destination) ? destination : [ destination ]
 
-    const validateTransport = transportValidator[type]
+    const canTransport = transportValidator[type]
     const transporter = transportSource[type]
     const afterTransporting = afterTransportSource[type]
 
@@ -71,10 +76,19 @@ export function getTransport<T extends TransportType>({ type, source, destinatio
     return async function(dest: string) {
         // Create a temporary directory with any results of the transport contained within it
         const tmpdir = fs.mkdtempSync(tmpdirName)
+        if (verbose)
+            console.log('Created ' + tmpdir)
 
         // Transport each source specification
         for (const source of sources) {
-            console.log('Getting source')
+            if (! await canTransport(source)) {
+                if (verbose) 
+                    console.log('Cannot transport source')
+                continue
+            }
+
+            if (verbose)
+                console.log('Getting source')
             try {
                 await transporter(source, tmpdir)
                 await afterTransporting(source, tmpdir)
@@ -84,12 +98,17 @@ export function getTransport<T extends TransportType>({ type, source, destinatio
             }
         }
 
+        // console.log(displayDirectory(tmpdir))
+
         // Write each destination specification from the source
         for (const destination of destinations) {
-            console.log('Writing destination')
+            if (verbose)
+                console.log('Writing destination')
+
             const sourceFile = path.join(tmpdir, destination.source)
             if (! fs.existsSync(sourceFile)) {
-                console.log('Cannot find ' + sourceFile)
+                if (verbose)
+                    console.log('Cannot find ' + sourceFile)
             }
             else {
                 const destFile = path.join(dest, destination.file || destination.source)
@@ -101,9 +120,9 @@ export function getTransport<T extends TransportType>({ type, source, destinatio
 
         // Clean the temporary directory after transporting
         if (clean === false) {
-            console.log('Dir: ' + tmpdir)
+            console.log('dir: ' + tmpdir)
         }
-        else fs.rmdirSync(tmpdir)
+        else fs.rmSync(tmpdir, { recursive: true, force: true })
     }
 
 }

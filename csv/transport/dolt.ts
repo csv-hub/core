@@ -32,7 +32,6 @@ export async function transportDoltSource(source: DoltSource, dir: string) {
  */
 export async function afterTransportingDoltSource(source: DoltSource, dir: string) {
     const doltDir = path.join(dir, sourceName(source))
-    console.log(doltDir)
     await doltCommand(['dump', '-f', '--result-format=csv', '--directory=' + doltDir], doltDir)
 }
 
