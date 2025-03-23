@@ -10,39 +10,39 @@ import type {
 } from '../types'
 
 import {
+    afterTransportingDoltSource,
+    canTransportDolt,
+    transportDoltSource
+} from './dolt'
+
+import {
+    afterTransportingWebSource,
     canTransportWeb,
     transportWebSource
 } from './web'
 
-const transportDependencyHandler: Record<TransportType, () => Promise<boolean>> = {
-    dolt: async () => {
-        try {
-            exec('which dolt')
-            return true
-        }
-        catch (error) {
-            return false
-        }
-    },
-    web: async () => {
-        // check Internet connection
-        return true
-    },
-    s3: async () => {
-        // check AWS credentials and permissions available
-        return true
-    }
+import {
+    canTransportS3,
+    transportS3Source
+} from './s3'
+
+const transportValidator: Record<TransportType, () => Promise<boolean>> = {
+    dolt: canTransportDolt,
+    web: canTransportWeb,
+    s3: canTransportS3
 }
 
 // Map imported handlers to objects to store as building components of a final asynchronous transport function
-const transportSourceHandler: { [T in TransportType]: (source: TransportSource<T>, dest: string) => Promise<any> } = {
+const transportSource: { [T in TransportType]: (source: TransportSource<T>, dest: string) => Promise<any> } = {
     web: transportWebSource,
-    dolt: async (source) => {
-        // TODO
-    },
-    s3: async (source) => {
-        // TODO
-    }
+    dolt: transportDoltSource,
+    s3: transportS3Source
+}
+
+const afterTransportSource: { [T in TransportType]: (source: TransportSource<T>, dest: string) => Promise<any> } = {
+    web: afterTransportingWebSource,
+    dolt: afterTransportingDoltSource,
+    s3: async () => false
 }
 
 /**
@@ -52,11 +52,15 @@ const transportSourceHandler: { [T in TransportType]: (source: TransportSource<T
  * @param type 
  * @returns 
  */
-export function getTransport<T extends TransportType>({ type, source, destination }: TransportDefinition<T>) {
+export function getTransport<T extends TransportType>({ type, source, destination, clean }: TransportDefinition<T>) {
     // A working temporary directory for the transport
     const tmpdirName = path.join(os.tmpdir(), `csv-${ type }-`)
     const sources = Array.isArray(source) ? source : [ source ]
-    const transportSource = transportSourceHandler[type]
+    const destinations = Array.isArray(destination) ? destination : [ destination ]
+
+    const validateTransport = transportValidator[type]
+    const transporter = transportSource[type]
+    const afterTransporting = afterTransportSource[type]
 
     // - check that the transport type is available for dolt
     // if (transportDependency[type] && ! await transportDependency[type]())
@@ -68,19 +72,27 @@ export function getTransport<T extends TransportType>({ type, source, destinatio
         // Create a temporary directory with any results of the transport contained within it
         const tmpdir = fs.mkdtempSync(tmpdirName)
 
+        // Transport each source specification
         for (const source of sources) {
             console.log('Getting source')
-            await transportSource(source, tmpdir)
+            try {
+                await transporter(source, tmpdir)
+                await afterTransporting(source, tmpdir)
+            }
+            catch (error) {
+                console.log('error', error)
+            }
         }
 
-        for (const transport of destination) {
+        // Write each destination specification from the source
+        for (const destination of destinations) {
             console.log('Writing destination')
-            const sourceFile = path.join(tmpdir, transport.source)
+            const sourceFile = path.join(tmpdir, destination.source)
             if (! fs.existsSync(sourceFile)) {
                 console.log('Cannot find ' + sourceFile)
             }
             else {
-                const destFile = path.join(dest, transport.file || transport.source)
+                const destFile = path.join(dest, destination.file || destination.source)
                 const destDir = path.dirname(destFile)
                 fs.mkdirSync(destDir, { recursive: true })
                 fs.renameSync(sourceFile, destFile)
@@ -88,7 +100,10 @@ export function getTransport<T extends TransportType>({ type, source, destinatio
         }
 
         // Clean the temporary directory after transporting
-        fs.rmdirSync(tmpdir)
+        if (clean === false) {
+            console.log('Dir: ' + tmpdir)
+        }
+        else fs.rmdirSync(tmpdir)
     }
 
 }

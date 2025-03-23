@@ -21,8 +21,21 @@ async function main() {
         ]
     })
 
-    await getWeb(SANDBOX)
-    
+    const getDolt = getTransport({
+        type: 'dolt',
+        source: {
+            repository: 'post-no-preference/rates',
+            name: 'table'
+        },
+        destination: {
+            source: 'table/us_treasury.csv',
+            file: 'us_treasury.csv'
+        },
+        clean: false
+    })
+
+    // await getWeb(SANDBOX)
+    await getDolt(SANDBOX)
 }
 
 main()

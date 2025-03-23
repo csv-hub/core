@@ -8,10 +8,13 @@ export interface TransportDefinition<T extends TransportType> {
     source: TransportSource<T> | Array<TransportSource<T>>
 
     // The destinations to write
-    destination: TransportDestination[]
+    destination: TransportDestination | TransportDestination[]
 
     // Automatically runs this transport on a schedule (number is in hours)
     update_frequency?: 'day' | 'week' | 'month' | 'year' | number
+
+    // If set to false, will output tmp directory instead of deleting
+    clean?: boolean
 }
 
 export interface TransportDestination {
@@ -54,6 +57,8 @@ export interface WebSource {
 }
 
 export interface DoltSource {
+    branch?: string         // default master
+    name?: string           // local folder name
     repository: string
 }
 

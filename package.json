@@ -50,6 +50,7 @@
   },
   "homepage": "https://github.com/csv-hub/core#readme",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.772.0",
     "@clickhouse/client": "^1.10.1",
     "csv-parser": "^3.2.0",
     "ndjson": "^2.0.0"

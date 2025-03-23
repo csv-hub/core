@@ -1,15 +1,27 @@
+// File system
 import fs from 'fs'
 import path from 'path'
-import { IncomingMessage } from 'http'
-import https from 'https'
-import http from 'http'
 import { execSync as exec } from 'child_process'
 
-import { WebSource, TransportProgress } from '../types'
+// Networking
+import https from 'https'
+import http from 'http'
+import dns from 'dns'
 
+// Types and errors
+import type { WebSource, TransportProgress } from '../types'
+import { DownloadError } from './error'
+
+/**
+ * Checks for a valid Internet connection
+ * @returns 
+ */
 export async function canTransportWeb(): Promise<boolean> {
-    // TODO: check internet
-    return true
+    return new Promise((resolve) => {
+        dns.resolve('google.com', (error) => {
+            resolve(!error)
+        })
+    })
 }
 
 /**
@@ -20,14 +32,14 @@ export async function canTransportWeb(): Promise<boolean> {
  * @param param2 
  * @returns 
  */
-export async function transportWebSource({ url, name, secure, unzip, redirectLimit = 3 }: WebSource, dir: string, progress?: TransportProgress) {
+export async function transportWebSource({ url, name, secure, redirectLimit = 3 }: WebSource, dir: string, progress?: TransportProgress) {
 
     return new Promise((resolve: (writtenTo: string) => any, reject) => {
 
         /**
          * Recursively called with the URL returned from 301/302 redirects
          */
-        function makeRequest(url: string, handler: (response: IncomingMessage) => any, redirect: number = 0) {
+        function makeRequest(url: string, handler: (response: http.IncomingMessage) => any, redirect: number = 0) {
             const useHttps = secure || url.startsWith('https://')
 
             return (useHttps ? https : http).get(url, (response) => {
@@ -94,41 +106,13 @@ export async function transportWebSource({ url, name, secure, unzip, redirectLim
 
 export async function afterTransportingWebSource({ name, url, unzip }: WebSource, dir: string) {
     const dest = path.join(dir, name || path.basename(url))
+    const cwd = path.dirname(dest)
 
     if (unzip) {
         const base = path.basename(dest, '.zip')
         // TODO: check for .tar.gz and other compression formats
-        exec(`unzip ${ base }.zip -d ${ base }`, { cwd: path.dirname(dest) })
-        exec(`rm ${ base }.zip`, { cwd: dest })
+        exec(`unzip ${ base }.zip -d ${ base }`, { cwd })
+        exec(`rm ${ base }.zip`, { cwd })
     }
 }
 
-export class DownloadError extends Error {
-    url: string
-    response: IncomingMessage
-
-    constructor(url: string, response: IncomingMessage) {
-        super(`URL ${ url } return ${ response.statusCode } error`)
-        this.url = url
-        this.response = response
-    }
-}
-
-function displayBytes(bytes: number): string {
-    let kb = (bytes / 1000)
-    let unit = 'KB'
-    if (kb >= 1000000000) {
-        unit = 'TB'
-        kb = kb / 1000000000
-    }
-    else if (kb >= 1000000) {
-        unit = 'GB'
-        kb = kb / 1000000
-    }
-    else if (kb >= 1000) {
-        unit = 'MB'
-        kb = kb / 1000
-    }
-    
-    return [ kb.toFixed(1).replace(/\.0$/g, ''), unit ].join(' ')
-}
