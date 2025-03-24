@@ -1,5 +1,5 @@
-import type { Table, Column } from '../server'
-import { dateFormatParser } from '../transform'
+import type { Table, Column } from '../../server'
+import { dateFormatParser } from '../../transform'
 
 type ColumnInferType = 'string' | 'number' | 'date'
 

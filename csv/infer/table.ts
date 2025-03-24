@@ -1,4 +1,4 @@
-import type { Table } from '../server'
+import type { Table } from '../../server'
 import { ColumnInference } from '.'
 
 /**

@@ -1,9 +1,15 @@
 import { S3Client } from '@aws-sdk/client-s3'
 
-export async function canTransportS3() {
-    return false
-}
+import type { TransportExecutor } from '../../types'
 
-export async function transportS3Source() {
-    
-}
+export default {
+    async canTransport() {
+        return false
+    },
+    async transportSource() {
+
+    },
+    async afterTransportingSource() {
+        
+    }
+} satisfies TransportExecutor<'s3'>

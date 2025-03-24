@@ -1,4 +1,7 @@
-import { ColumnDefinition, ColumnSpecificationMap } from '.'
+import { 
+    ColumnSpecificationMap,
+    TransportDefinition
+} from '.'
 
 /**
  * This is a description of a schema used to generate a table name and other relevant metadata.
@@ -13,6 +16,7 @@ export interface TableDefinition {
     // Possible versions, appended after the table name as [dataset]_[table name]_[version].
 	// If the version is not specified, the table name defaults to [dataset]_[table name].
     version?: string
+    defaultVersion?: string
     versions?: string[]
 
 	// ClickHouse table engine and replication settings
@@ -64,6 +68,8 @@ export interface TableDefinition {
 	 * To import data for this schema from an NDJSON file.
 	 */
 	ndjson?: SourceLocation | SourceVersionLocation
+
+    transport?: TransportDefinition | ((version?: string) => TransportDefinition)
 
     /**
      * Table metadata

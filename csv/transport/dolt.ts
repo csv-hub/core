@@ -1,40 +1,42 @@
 import path from 'path'
 import { spawn, execSync as exec } from 'child_process'
 
-import type { DoltSource } from '../types'
-
-export async function canTransportDolt() {
-    try {
-        exec('which dolt')
-        return true
-    }
-    catch (error) {
-        return false
-    }
-}
+import type { DoltSource, TransportExecutor } from '../../types'
 
 /**
- * Clone a Dolt repository to a local directory using the given source specification.
- * @param source 
- * @param dir 
+ * Transport implementation for dolt
  */
-export async function transportDoltSource(source: DoltSource, dir: string) {
-    const branch = source.branch || 'master'
-    const name = sourceName(source)
+export default {
+    async canTransport() {
+        try {
+            exec('which dolt')
+            return true
+        }
+        catch (error) {
+            return false
+        }
+    },
+    // Run dolt clone to transport the source
+    async transportSource(source, dir) {
+        const branch = source.branch || 'master'
+        const name = source.name || path.basename(source.repository)
 
-    await doltCommand(['clone', '--depth=1', '--branch=' + branch, source.repository, name], dir)
-}
+        await doltCommand(['clone', '--depth=1', '--branch=' + branch, source.repository, name], dir)
+    },
+    // Run dolt dump to generate CSV files
+    async afterTransportingSource(source, dir) {
+        const doltDir = path.join(dir, source.name || path.basename(source.repository))
+        await doltCommand(['dump', '-f', '--result-format=csv', '--directory=' + doltDir], doltDir)
+    }
+} satisfies TransportExecutor<'dolt'>
 
 /**
- * Execute dolt dump within the repository directory
- * @param source 
- * @param dir 
+ * Spawn a process to execute a dolt command.
+ * 
+ * @param command 
+ * @param cwd 
+ * @returns 
  */
-export async function afterTransportingDoltSource(source: DoltSource, dir: string) {
-    const doltDir = path.join(dir, sourceName(source))
-    await doltCommand(['dump', '-f', '--result-format=csv', '--directory=' + doltDir], doltDir)
-}
-
 async function doltCommand(command: string[], cwd: string): Promise<string> {
     return new Promise((resolve, reject) => {
         const dolt = spawn('dolt', command, {
@@ -58,10 +60,5 @@ async function doltCommand(command: string[], cwd: string): Promise<string> {
             else
                 resolve(stdout.join(''))
         })
-    })
-    
-}
-
-function sourceName(source: DoltSource) {
-    return source.name || path.basename(source.repository)
+    })   
 }
