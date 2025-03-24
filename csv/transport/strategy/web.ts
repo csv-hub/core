@@ -11,11 +11,11 @@ import http from 'http'
 import dns from 'dns'
 
 // Types and errors
-import type { TransportExecutor } from '../../types'
-import { DownloadError } from './error'
+import type { TransportExecutor } from '../../../types'
+import { DownloadError } from '../error'
 
 // Utility functions
-import { displayBytes, displayDirectory } from '../util/display'
+import { displayBytes, displayDirectory } from '../../util/display'
 
 export default {
     async canTransport({ url }): Promise<boolean> {

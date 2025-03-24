@@ -3,9 +3,10 @@
  * - web: acquire the CSV file from a web location
  * - s3: acquire the file from an S3 bucket with the given key
  * - dolt: acquire the file from the dump of a Dolt database
+ * - github: clone a repository or get a specific raw file
  * - ... - future extensions
  */
-export type TransportType = 'web' | 's3' | 'dolt'
+export type TransportType = 'web' | 's3' | 'dolt' | 'github'
 
 /**
  * An object which defines the transport strategy.
@@ -72,14 +73,22 @@ interface TransportSourceMap extends Record<TransportType, { [key: string]: any 
     s3: S3Source
     web: WebSource
     dolt: DoltSource
+    github: GithubSource
 }
 
 /**
  * Defines an S3 source
  */
 export interface S3Source {
+    region?: string
     bucket: string
+    
+    // A prefix to include before the key
+    prefix?: string
+    // Determines the output file name if the "name" key is not set
     key: string
+    // Explicit name to set for this S3 source file
+    name?: string
 
     // If the ACL of the S3 bucket is set to "requester pays"
     requesterPays?: boolean
@@ -99,7 +108,18 @@ export interface WebSource {
 }
 
 export interface DoltSource {
+    repository: string
     branch?: string         // default master
     name?: string           // local folder name
+}
+
+export interface GithubSource {
+    user?: string           // prefixed to repository
+    organization?: string   // prefixed to repository
     repository: string
+    branch?: string         // default master
+
+    // Download a specific file
+    file?: string           // download a specific file, otherwise clones the repository
+    name?: string           // file name to output instead of standard repo path (repo name/file name)
 }

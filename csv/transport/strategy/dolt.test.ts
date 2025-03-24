@@ -1,10 +1,10 @@
 
-import { getTransport } from './transport'
+import { getTransport } from '../transport'
 import { 
     createTemporaryDirectory,
     directoryHasFile,
     removeDirectory
-} from '../util/filesystem'
+} from '../../util/filesystem'
 
 
 describe('Dolt Transport', () => {

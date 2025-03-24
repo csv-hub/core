@@ -11,12 +11,12 @@ import type {
     TransportExecutorMap
 } from '../../types'
 
-import dolt from './dolt'
-import web from './web'
-import s3 from './s3'
+import dolt from './strategy/dolt'
+import web from './strategy/web'
+import s3 from './strategy/s3'
+import github from './strategy/github'
 
-const transportExecutor: TransportExecutorMap = { web, dolt, s3 }
-
+const transportExecutor: TransportExecutorMap = { web, dolt, s3, github }
 
 /**
  * Exports a single pure function for generating a Transport type object, which can be used to

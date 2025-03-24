@@ -1,7 +1,7 @@
 import path from 'path'
 import { spawn, execSync as exec } from 'child_process'
 
-import type { DoltSource, TransportExecutor } from '../../types'
+import type { DoltSource, TransportExecutor } from '../../../types'
 
 /**
  * Transport implementation for dolt
