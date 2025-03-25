@@ -18,11 +18,10 @@
 	},
 	"include": [
         "./types/**/*",
-        "./server/**/*",
-		"./transform/**/*",
-        "./decorator/**/*",
+        "./data/**/*",
         "./csv/**/*",
-        "./storage/**/*"
+		"./transform/**/*",
+        "./decorator/**/*"
     ],
 	"exclude": [
         "**/*.test.ts",

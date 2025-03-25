@@ -3,7 +3,7 @@ import path from 'path'
 import stream from 'stream'
 import csv from 'csv-parser'
 
-import type { Table, Column, AnyClass, AnyObject } from '../server'
+import type { Table, Column, AnyClass, AnyObject } from '../data'
 import { CSVRow, CSVRowReader, CSVHeaderMapper, CSVValueMapper } from './types'
 
 export class CSVFile {
@@ -69,14 +69,66 @@ export class CSVFile {
             headers: this.headers,
             escape: this.escape,
             newline: this.newline,
-            mapHeaders: callback.mapHeader ? ({ header, index }) => callback.mapHeader(header, index) : undefined,
-            mapValues: callback.mapValue ? ({ header, value, index }) => callback.mapValue(header, value, index) : undefined
+            mapHeaders: callback.mapHeader ? (({ header, index }) => callback.mapHeader(header, index)) : ({ header }) => header,
+            mapValues: callback.mapValue ? (({ header, value, index }) => callback.mapValue(header, value, index)) : ({ value }) => value
         }))
         .on('data', (data) => callback.onRow(data, stream))
         .on('end', () => callback.onEnd(stream))
         .on('error', (error) => callback.onError(error, stream))
 
         return stream
+    }
+
+    /**
+     * Transform a TSV or arbitrarily-delimited file into a standard CSV
+     * @param { string[] } transform.addHeader - add headers to the file
+     * @param destination 
+     * @returns 
+     */
+    async transform({ addHeader, mapSeparator }: { addHeader?: string[], mapSeparator?: string }, destination: string): Promise<string> {
+        const csv = this
+        
+        return new Promise((resolve, reject) => {
+            csv.headers = addHeader
+            csv.separator = mapSeparator
+
+            const writeStream = fs.createWriteStream(destination)
+            let headerIndex: string[] = []
+            let rowLength = (addHeader ? addHeader.length : 0)
+
+            if (addHeader) {
+                writeStream.write(`"${ addHeader.join('","') }"\n`)
+                headerIndex = addHeader
+            }
+
+            csv.read({
+                mapHeader(header, index) {
+                    headerIndex[index] = header
+                    rowLength = Math.max(rowLength, index + 1)
+                    return header
+                },
+                onRow(row) {
+                    const output = new Array(rowLength).fill('')
+                    for (let i = 0 ; i < output.length ; i++) {
+                        const value = row[headerIndex[i]]
+                        if (typeof value === 'string')
+                            output[i] = `"${ value.replace(/"/g, '""') }"`
+                    }
+                    writeStream.write(output.join(','))
+                    writeStream.write('\n')
+                },
+                onEnd() {
+                    writeStream.close((error) => {
+                        if (error)
+                            reject(error)
+                        else
+                            resolve(destination)
+                    })
+                    
+                }
+            })
+        })
+        
     }
 
     async insertIntoTable<T extends AnyClass>(
@@ -96,7 +148,7 @@ export class CSVFile {
             const inserts: Array<Promise<any>> = []
             function ingestBatch(ingest: AnyObject[]) {
                 rows += ingest.length
-                inserts.push(table.insertAny(ingest, batchSize).then(() => {
+                inserts.push(table.insertValid(ingest, batchSize).then(() => {
                     ingested += ingest.length
                 }))
             }

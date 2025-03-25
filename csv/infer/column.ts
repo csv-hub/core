@@ -1,4 +1,4 @@
-import type { Table, Column } from '../../server'
+import type { Table, Column } from '../../data'
 import { dateFormatParser } from '../../transform'
 
 type ColumnInferType = 'string' | 'number' | 'date'

@@ -1,5 +1,5 @@
 
-import { getTransport } from '../transport'
+import { createTransport } from '../transport'
 import { 
     createTemporaryDirectory,
     directoryHasFile,
@@ -12,7 +12,7 @@ describe('Web Transport', () => {
     it('should transport Big Mac prices', async () => {
         const tmpdir = createTemporaryDirectory('test')
 
-        const transport = getTransport({ 
+        const transport = createTransport({ 
             type: 'web', 
             source: [
                 {
@@ -27,7 +27,7 @@ describe('Web Transport', () => {
             ]
         })
 
-        await transport(tmpdir)
+        await transport({ destination: tmpdir })
         expect(directoryHasFile(tmpdir, 'bigmac.csv')).toEqual(true)
         removeDirectory(tmpdir)
     })

@@ -16,6 +16,7 @@ import { DownloadError } from '../error'
 
 // Utility functions
 import { displayBytes, displayDirectory } from '../../util/display'
+import { bindProgress } from '../../util/progress'
 
 export default {
     async canTransport({ url }): Promise<boolean> {
@@ -55,25 +56,14 @@ export default {
             const dest = path.join(dir, name || path.basename(url))
             const file = fs.createWriteStream(dest)
             const request = makeRequest(url, (response) => {
-                
-                // Get the total byte size of the response, and communicate it to a progress handler if provided
-                const contentLength = parseInt(response.headers['content-length'], 10)
-                
-                if (progress) {
-                    console.log('   Downloading ' + chalk.bold(displayBytes(contentLength)))
-                    progress(0, contentLength, 0)
-                    let contentDownloaded = 0
-                    response.on('data', (chunk) => {
-                        contentDownloaded += chunk.length
-                        progress(contentDownloaded, contentLength, chunk.length)
-                    })
-                }
+                bindProgress(response, progress)
                 
                 // Pipe the response to the write stream
                 response.pipe(file)
     
                 file.on('finish', () => {
                     file.close((error) => {
+                        request.destroy()
                         if (error)
                             reject(error)
                         else {
@@ -107,6 +97,7 @@ export default {
             // TODO: check for .tar.gz and other compression formats
             exec(`unzip ${ base }.zip -d ${ base }`, { cwd })
             exec(`rm ${ base }.zip`, { cwd })
+            console.log(displayDirectory(path.join(cwd, base)))
         }
     }
 } satisfies TransportExecutor<'web'>

@@ -2,8 +2,8 @@ import fs from 'fs'
 import path from 'path'
 import csv from 'csv-parser'
 
-import type { Table } from '../server'
-import type { AnyClass, AnyObject } from '../server/types'
+import type { Table } from '../data'
+import type { AnyClass, AnyObject } from '../data/types'
 
 export async function streamInsertCSV<T extends AnyClass>(
     table: Table<T>, 
@@ -23,7 +23,7 @@ export async function streamInsertCSV<T extends AnyClass>(
         let batch: AnyObject[] = []
         function ingestBatch(ingest: AnyObject[]) {
             rows += ingest.length
-            inserts.push(table.insertAny(ingest, batchSize).then(() => {
+            inserts.push(table.insertValid(ingest, batchSize).then(() => {
                 ingested += ingest.length
             }))
         }

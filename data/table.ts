@@ -123,7 +123,7 @@ export class Table<T extends AnyClass = AnyClass> {
         // console.log('csv', result)
     }
 
-    async insertAny(values: Array<AnyObject>, batch?: number) {
+    async insertValid(values: Array<AnyObject>, batch?: number) {
         return this.insert(values as Array<ColumnObject<T>>, batch)
     }
 

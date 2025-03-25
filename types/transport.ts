@@ -38,6 +38,18 @@ export interface TransportExecutor<T extends TransportType> {
     afterTransportingSource(source: TransportSource<T>, destination: string): Promise<any>
 }
 
+export type TransportFunction<T extends TransportType> = (option?: TransportOption<T>) => Promise<string>
+
+export interface TransportOption<T extends TransportType> {
+    destination?: string
+
+    onTransportStart?: (source: TransportSource<T>) => any
+    onTransportFinish?: (source: TransportSource<T>) => any
+
+    // Print output to the console
+    verbose?: boolean
+}
+
 export type TransportExecutorMap = {
     [T in TransportType]: TransportExecutor<T>
 }
@@ -58,6 +70,7 @@ export interface TransportDestination {
 
     // Future: If the source CSV file does not have headers, adds the headers during the extraction process
     addHeader?: string[]
+    mapSeparator?: string
 }
 
 /**
@@ -114,8 +127,6 @@ export interface DoltSource {
 }
 
 export interface GithubSource {
-    user?: string           // prefixed to repository
-    organization?: string   // prefixed to repository
     repository: string
     branch?: string         // default master
 

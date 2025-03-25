@@ -5,27 +5,34 @@ import chalk from 'chalk'
 import ProgressBar from 'progress'
 
 import type { 
-    TransportType, TransportDefinition, 
-    TransportSource, TransportDestination,
+    TransportType, 
+    TransportDefinition, 
     TransportProgress,
-    TransportExecutorMap
+    TransportExecutorMap,
+    TransportFunction,
+    TransportOption
 } from '../../types'
 
+import { CSVFile } from '../file'
+import { createTemporaryDirectory } from '../util/filesystem'
+
+// All transport strategies
 import dolt from './strategy/dolt'
 import web from './strategy/web'
 import s3 from './strategy/s3'
 import github from './strategy/github'
 
+// Collect all strategies into a single object map
 const transportExecutor: TransportExecutorMap = { web, dolt, s3, github }
 
 /**
- * Exports a single pure function for generating a Transport type object, which can be used to
- * extract data from multiple locations through the `transportFile` and `transportDirectory` methods.
+ * Exports a function which executes the given transportation strategy definition and places the resulting CSV
+ * files in the given output directory.
  * 
- * @param type 
- * @returns 
+ * @param { TransportDefinition<T> } definition
+ * @returns { TransportFunction<T> }
  */
-export function getTransport<T extends TransportType>({ type, source, destination, clean }: TransportDefinition<T>) {
+export function createTransport<T extends TransportType>({ type, source, destination, clean }: TransportDefinition<T>): TransportFunction<T> {
     // A working temporary directory for the transport
     const tmpdirName = path.join(os.tmpdir(), `csv-${ type }-`)
     const sources = Array.isArray(source) ? source : [ source ]
@@ -39,7 +46,11 @@ export function getTransport<T extends TransportType>({ type, source, destinatio
     /**
      * Returns 
      */
-    return async function(dest: string, verbose?: boolean) {
+    return async function({ 
+        destination = createTemporaryDirectory(), 
+        verbose = false
+    }: TransportOption<T> = {}) {
+
         // Create a temporary directory with any results of the transport contained within it
         const tmpdir = fs.mkdtempSync(tmpdirName)
         if (verbose) {
@@ -52,7 +63,7 @@ export function getTransport<T extends TransportType>({ type, source, destinatio
         for (const source of sources) {
             if (! await executor.canTransport(source)) {
                 if (verbose) {
-                    console.log(' > ' + displaySource(source))
+                    console.log(' > ' + displaySource(type, source))
                     console.log(chalk.red('   * Cannot transport source - ensure all identifiers are valid'))
                 }
                 continue
@@ -60,7 +71,7 @@ export function getTransport<T extends TransportType>({ type, source, destinatio
 
             if (verbose) {
                 console.log(' > ' + chalk.green('Transporting source'))
-                console.log('   ' + displaySource(source))
+                console.log('   ' + displaySource(type, source))
             }
 
             let progressBar: ProgressBar;
@@ -90,36 +101,52 @@ export function getTransport<T extends TransportType>({ type, source, destinatio
         // console.log(displayDirectory(tmpdir))
 
         // Write each destination specification from the source
-        for (const destination of destinations) {
+        for (const dest of destinations) {
             if (verbose) {
                 console.log(' > ' + chalk.green('Moving to destination'))
-                console.log('   ' + chalk.bold(destination.source) + ' > ' + chalk.bold(destination.file))
+                console.log('   ' + chalk.bold(dest.source) + ' > ' + chalk.bold(dest.file || dest.source))
             }
 
-            const sourceFile = path.join(tmpdir, destination.source)
+            const sourceFile = path.join(tmpdir, dest.source)
             if (! fs.existsSync(sourceFile)) {
                 if (verbose)
                     console.log('Cannot find ' + sourceFile)
+                throw new Error('transport error: cannot find source file')
             }
             else {
-                const destFile = path.join(dest, destination.file || destination.source)
+                const destFile = path.join(destination, dest.file || dest.source)
                 const destDir = path.dirname(destFile)
                 fs.mkdirSync(destDir, { recursive: true })
-                fs.renameSync(sourceFile, destFile)
+                
+                // Read the CSV file and remap separator properties
+                if (dest.addHeader || dest.mapSeparator) {
+                    await new CSVFile(sourceFile).transform(dest, destFile)
+                }
+                // Otherwise simply rename the file
+                else fs.renameSync(sourceFile, destFile)
             }       
         }
 
         // Clean the temporary directory after transporting
         if (clean !== false) {
-            console.log(chalk.gray(' > Cleaning temporary directory'))
+            if (verbose)
+                console.log(chalk.gray(' > Cleaning temporary directory'))
             fs.rmSync(tmpdir, { recursive: true, force: true })
         }
-        console.log(chalk.green(' > Completed transport'))
+        if (verbose) {
+            console.log(chalk.green(' > Completed transport'))
+            console.log('   ' + chalk.gray(destination))
+        }
+
+        return destination
     }
 
 }
 
-function displaySource({ url, name }: { [key: string]: any }): string {
+function displaySource(type: TransportType, { url, name, repository, file }: { [key: string]: any }): string {
+    if (repository) {
+        return (type == 'github' ? 'github/' : 'dolt/') + repository
+    }
     if (url) {
         if (url.length > 40)
             url = url.substring(0, 37) + '...'

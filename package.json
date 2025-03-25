@@ -5,29 +5,25 @@
   "main": "./dist/types/index.js",
   "exports": {
     ".": "./dist/types/index.js",
-    "./server": "./dist/server/index.js",
-    "./script": "./dist/script/index.js",
-    "./transform": "./dist/transform/index.js",
+    "./data": "./dist/data/index.js",
     "./csv": "./dist/csv/index.js",
+    "./transform": "./dist/transform/index.js",
     "./decorator": "./dist/decorator/namespace.js"
   },
   "types": "./dist/types/index.d.ts",
   "typesVersions": {
     "*": {
-      "server": [
-        "./dist/server/index.d.ts"
+      "data": [
+        "./dist/data/index.d.ts"
       ],
-      "script": [
-        "./dist/script/index.d.ts"
+      "csv": [
+        "./dist/csv/index.d.ts"
       ],
       "transform": [
         "./dist/transform/index.d.ts"
       ],
       "decorator": [
         "./dist/decorator/namespace.d.ts"
-      ],
-      "csv": [
-        "./dist/csv/index.d.ts"
       ]
     }
   },

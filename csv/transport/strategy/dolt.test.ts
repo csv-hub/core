@@ -1,18 +1,17 @@
 
-import { getTransport } from '../transport'
+import { createTransport } from '../transport'
 import { 
     createTemporaryDirectory,
     directoryHasFile,
     removeDirectory
 } from '../../util/filesystem'
 
-
-describe('Dolt Transport', () => {
+describe('Dolt transport', () => {
 
     it('should transport US treasury rates', async () => {
         const tmpdir = createTemporaryDirectory('test')
 
-        const transport = getTransport({
+        const transport = createTransport({
             type: 'dolt',
             source: {
                 repository: 'post-no-preference/rates',
@@ -24,7 +23,7 @@ describe('Dolt Transport', () => {
             }
         })
 
-        await transport(tmpdir)
+        await transport({ destination: tmpdir })
         expect(directoryHasFile(tmpdir, 'us_treasury.csv')).toEqual(true)
         removeDirectory(tmpdir)
     })

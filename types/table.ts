@@ -69,7 +69,7 @@ export interface TableDefinition {
 	 */
 	ndjson?: SourceLocation | SourceVersionLocation
 
-    transport?: TransportDefinition | ((version?: string) => TransportDefinition)
+    transport?: TransportDefinition | TransportDefinition[] | ((version?: string) => TransportDefinition | TransportDefinition[])
 
     /**
      * Table metadata

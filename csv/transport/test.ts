@@ -1,12 +1,12 @@
 import fs from 'fs'
 import path from 'path'
 
-import { getTransport } from './transport'
+import { createTransport } from './transport'
 
 const SANDBOX = path.join(__dirname, '../../../sandbox')
 
 async function main() {
-    const getWeb = getTransport({ 
+    const getWeb = createTransport({ 
         type: 'web', 
         source: [
             {
@@ -22,7 +22,26 @@ async function main() {
         ]
     })
 
-    await getWeb(SANDBOX, true)
+    const getGithub = createTransport({
+        type: 'github',
+        source: [
+            {
+                repository: 'laxmimerit/All-CSV-ML-Data-Files-Download',
+                branch: 'master',
+                file: 'IMDB-Dataset.csv',
+                name: 'imdb.csv'
+            }
+        ],
+        destination: [
+            {
+                source: 'imdb.csv'
+                // file: 'imdb.csv'
+            }
+        ]
+    })
+
+    await getWeb({ destination: SANDBOX, verbose: true })
+    console.log('Done with transport')
 }
 
 main()
