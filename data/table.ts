@@ -127,15 +127,14 @@ export class Table<T extends AnyClass = AnyClass> {
         return this
     }
 
-    async transport({ destination = createTemporaryDirectory('transport'), version, verbose }: TableTransportOption = {}) {
+    async transport({ destination = createTemporaryDirectory('transport'), version, verbose, useCache }: TableTransportOption = {}) {
         // Get transport definition from callback or directly from definition object
         const definedTransport = (typeof this.def.transport === 'function') ? this.def.transport(version) : this.def.transport
         const definedCSV = (typeof this.def.csv === 'function') ? this.def.csv(version) : this.def.csv
         if (! definedTransport)
             throw new TableTransportError(this)
 
-        log.tableTransportStart(this, verbose)
-        console.log(' > ' + destination)
+        log.tableTransportStart(this, destination, verbose)
         await this.create().orReplace().execute()
         
         const transports = Array.isArray(definedTransport) ? definedTransport : [ definedTransport ]
@@ -143,7 +142,7 @@ export class Table<T extends AnyClass = AnyClass> {
 
         for (const transportDef of transports) {
             log.tableTransport(this, transportDef, verbose)
-            await createTransport(transportDef)({ destination, verbose })
+            await createTransport(transportDef)({ destination, verbose, useCache })
         }
 
         log.tableTransportFinish(this, verbose)

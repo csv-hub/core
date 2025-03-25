@@ -10,6 +10,12 @@ const FEC = path.join(__dirname, '../../../../data/fec');
     importDatasetInVM(db, FEC)
 
     for (const table of db.getTables()) {
-        await table.transport({ verbose: false })
+        if (table.getName() != 'fec_committee') continue
+
+        await table.transport({ 
+            destination: path.join(FEC, 'data'), 
+            verbose: true,
+            useCache: false
+        })
     }
 })()

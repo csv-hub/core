@@ -48,8 +48,15 @@ export function createTransport<T extends TransportType>({ type, source, destina
      */
     return async function({ 
         destination = createTemporaryDirectory(), 
-        verbose = false
-    }: TransportOption<T> = {}) {
+        verbose = false,
+        useCache = false
+    }: TransportOption<T> = {}): Promise<string> {
+
+        if (useCache && destinations.every((dest) => fs.existsSync(path.join(destination, dest.file || dest.source)))) {
+            if (verbose)
+                console.log(chalk.green('Using cached files'))
+            return destination
+        }
 
         // Create a temporary directory with any results of the transport contained within it
         const tmpdir = fs.mkdtempSync(tmpdirName)

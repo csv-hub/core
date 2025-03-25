@@ -33,7 +33,11 @@ export function importTableInVM(database: Database, filename: string, datasetDir
     const column = database.columnDecorator()
 
     function vmRequire(name: string) {
-        if (name.startsWith('.')) {
+        // Ignore decorator stub
+        if (name == '@csvhub/core/decorator')
+            return {}
+        // Relative file path is also executed in a VM context
+        else if (name.startsWith('.')) {
             const resolvedFile = require.resolve(path.join(dirname, name))
             // console.log('resolved', resolvedFile)
             return runScript(resolvedFile)

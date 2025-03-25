@@ -4,10 +4,11 @@ import type { Database, Table, Column } from '.'
 import type { TransportDefinition } from '../types'
 import type { CSVErrorLog } from '../csv/types'
 
-export function tableTransportStart(table: Table, verbose = true) {
+export function tableTransportStart(table: Table, destination: string, verbose = true) {
     if (! verbose) return
     console.log(chalk.bold.green(`Starting transport for table "${ table.getName() }"`))
-    console.log(' > ' + chalk.gray('Creating or replacing table'))
+    console.log('   ' + chalk.gray(destination))
+    console.log(' > ' + chalk.gray('Initializing ClickHouse table'))
 }
 
 export function tableTransport(table: Table, transport: TransportDefinition, verbose = true) {
@@ -31,7 +32,7 @@ export function tableTransportErrors(errorLog: CSVErrorLog) {
             for (const code of Object.keys(errorLog[column])) {
                 const errors = errorLog[column][code]
                 console.log(`    - ${ code } - ${ errors.length } errors`)   
-                console.log(errors)
+                // console.log(errors)
             }
         }
     }

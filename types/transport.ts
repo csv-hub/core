@@ -51,12 +51,16 @@ export interface TransportOption<T extends TransportType> {
 
     // Print output to the console
     verbose?: boolean
+
+    // If all source files are available, don't redownload
+    useCache?: boolean
 }
 
 export interface TableTransportOption { 
     destination?: string
     version?: string
     verbose?: boolean
+    useCache?: boolean
 }
 
 export type TransportExecutorMap = {
@@ -80,6 +84,9 @@ export interface TransportDestination {
     // Future: If the source CSV file does not have headers, adds the headers during the extraction process
     addHeader?: string[]
     mapSeparator?: string
+    escape?: string
+    quote?: string
+    trimValues?: boolean
 }
 
 /**

@@ -4,7 +4,8 @@ import stream from 'stream'
 import csv from 'csv-parser'
 
 import type { Table, Column, AnyClass, AnyObject } from '../data'
-import { CSVRow, CSVRowReader, CSVHeaderMapper, CSVValueMapper, CSVErrorLog } from './types'
+import type { CSVRow, CSVRowReader, CSVHeaderMapper, CSVValueMapper, CSVErrorLog } from './types'
+import type { TransportDestination } from '../types'
 
 export class CSVFile {
     filename: string
@@ -12,6 +13,7 @@ export class CSVFile {
     // Characters for delimiting values
     separator = ','
     escape = '"'
+    quote = '"'
     newline = '\n'
 
     // Sets the stream buffer to this size multiplied by 1024
@@ -67,6 +69,7 @@ export class CSVFile {
             headers: this.headers,
             escape: this.escape,
             newline: this.newline,
+            quote: this.quote,
             mapHeaders: callback.mapHeader ? (({ header, index }) => callback.mapHeader(header, index)) : ({ header }) => header,
             mapValues: callback.mapValue ? (({ header, value, index }) => callback.mapValue(header, value, index)) : ({ value }) => value
         }))
@@ -83,12 +86,14 @@ export class CSVFile {
      * @param destination 
      * @returns 
      */
-    async transform({ addHeader, mapSeparator }: { addHeader?: string[], mapSeparator?: string }, destination: string): Promise<string> {
+    async transform({ addHeader, mapSeparator, escape, quote, trimValues }: Partial<TransportDestination>, destination: string): Promise<string> {
         const csv = this
         
         return new Promise((resolve, reject) => {
             csv.headers = addHeader
             csv.separator = mapSeparator
+            csv.escape = escape
+            csv.quote = quote
             
             fs.mkdirSync(path.dirname(destination), { recursive: true })
             const writeStream = fs.createWriteStream(destination)
@@ -105,6 +110,11 @@ export class CSVFile {
                     headerIndex[index] = header
                     rowLength = Math.max(rowLength, index + 1)
                     return header
+                },
+                mapValue(header, value, index) {
+                    if (trimValues)
+                        return value.trim()
+                    return value
                 },
                 onRow(row) {
                     const output = new Array(rowLength).fill('')
@@ -162,7 +172,12 @@ export class CSVFile {
                  * @param row 
                  */
                 onRow(row) {
-                    batch.push(row)
+                    if (csv.rowError) {
+                        console.log(row)
+                        csv.rowError = false
+                    }
+                    else batch.push(row)
+
                     if (batch.length >= batchSize) {
                         ingestBatch(batch)
                         batch = []
@@ -195,8 +210,11 @@ export class CSVFile {
         })
     }
 
+    rowError?: boolean
+
     private getTableMappers(table: Table): { mapHeader: CSVHeaderMapper, mapValue: CSVValueMapper } {
         const csv = this
+
         return {
             /**
              * 
@@ -215,19 +233,19 @@ export class CSVFile {
              * @param value 
              * @returns 
              */
-            mapValue(header, value) {
+            mapValue(header, value, index) {
+                if (index == 0) csv.rowError = false
+
                 const column = table.getColumnByName(header)
                 if (column) {
                     try {
                         return column.transformFromString(value)
                     }
                     catch (error) {
-                        if (column.def.defaultValue)
-                            return column.def.defaultValue
-
-                        console.log(error, `${ header } = (${ value })`)
+                        console.log(`${ header } = (${ value }) - ${ error.code || 'system' }`)
                         csv.addError(column, error)
-                        return value
+                        csv.rowError = true
+                        return null
                     }
                 }
                 return value
