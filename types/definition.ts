@@ -75,6 +75,12 @@ export interface ColumnDefinition {
     defaultValue?: any
 
     /**
+     * If there is a parsing error, use the default value as the value for this column, and do not mark the
+     * cell as having an invalid value.
+     */
+    defaultValueOnError?: boolean
+
+    /**
      * Throws the original error which caused fallback to a default value.
      */
     errorToDefaultValue?: boolean
@@ -98,6 +104,10 @@ export interface BooleanDefinition {
 
 export interface EnumDefinition {
     values?: string[] | { [key: string]: number }
+
+    // Convert values to uppercase or lowercase first
+    uppercase?: boolean
+    lowercase?: boolean
 }
 
 export interface NumberDefinition {
@@ -113,12 +123,12 @@ export interface NumberDefinition {
  */
 export interface DecimalDefinition {
     /**
-     * Digits of precision
+     * Determines how many decimal digits number can have (including fraction). By default, the precision is 10.
      */
     precision?: number
 
     /**
-     * Configuration parameter
+     * Determines how many decimal digits fraction can have.
      */
 	scale?: number
 
@@ -140,6 +150,7 @@ export interface DateDefinition {
 export interface StringDefinition {
 	lowCardinality?: boolean
 	length?: number
+    padLeft?: string            // if the string is less than the fixed length, pad left with the given character
 	ngrams?: number				// Indicates full text searching
 }
 

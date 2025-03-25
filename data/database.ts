@@ -7,6 +7,7 @@ import { ClickHouseClient, createClient } from '@clickhouse/client'
 import { 
     Table
 } from '.'
+
 import { 
     ListDatabasesCommand, 
     ListTablesCommand, 
@@ -15,9 +16,19 @@ import {
 } from './command/system'
 
 // Type imports
-import type { ColumnType, DefinitionOf, TableDefinition, TableSpecification } from '../types'
-import type { ColumnDecoratorBuilder, TableDecoratorBuilder } from '../decorator/types'
-import { DatabaseLocation, AnyClass, AnyInstance } from './types'
+import type { DatabaseLocation, AnyClass, AnyInstance } from './types'
+import type { 
+    ColumnType, 
+    DefinitionOf, 
+    TableDefinition, 
+    TableSpecification
+} from '../types'
+
+// Decorator types
+import type { 
+    ColumnDecoratorBuilder, 
+    TableDecoratorBuilder
+} from '../decorator/types'
 
 /**
  * Represents a specific ClickHouse database. Since Clickizen is designed to work with only
@@ -106,6 +117,10 @@ export class Database {
         return table
     }
 
+    getTables(): Table[] {
+        return this.tables
+    }
+
     getTable<T extends AnyClass>(name: string | T, def?: TableDefinition): Table<T> {
         return this.cachedTable(name, def)
     }
@@ -168,12 +183,16 @@ export class Database {
         else throw new Error('Table ' + name + ' is not registered')
     }
 
+    loadTables(dirname: string) {
+        // fs.readdirSync(dirname)
+    }
+
     /**
      * Loads any table definitions from the file by running it within a VM script
-     * @param filename 
+     * @param filename - a compiled table specification
      */
-    loadTableDefinition(filename: string) {
-        // TODO
+    loadTable(filename: string) {
+        
     }
 
     /**

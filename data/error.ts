@@ -11,3 +11,11 @@ export class TableExistsError extends Error {
     }
 
 }
+
+export class TableTransportError extends Error {
+
+    constructor(table: Table) {
+        super(`No transport definition for ${ table.getName() }`)
+    }
+    
+}

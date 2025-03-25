@@ -5,3 +5,7 @@ export type CSVRowReader = (row: { [key: string]: any }, stream: stream.Transfor
 
 export type CSVHeaderMapper = (header: string, index: number) => string
 export type CSVValueMapper = (header: string, value: string, index: number) => any
+
+export type CSVErrorLog = { [column: string]: {
+    [code: string]: Error[]
+} }

@@ -97,7 +97,7 @@ export default {
             // TODO: check for .tar.gz and other compression formats
             exec(`unzip ${ base }.zip -d ${ base }`, { cwd })
             exec(`rm ${ base }.zip`, { cwd })
-            console.log(displayDirectory(path.join(cwd, base)))
+            // console.log(displayDirectory(path.join(cwd, base)))
         }
     }
 } satisfies TransportExecutor<'web'>

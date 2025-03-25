@@ -44,7 +44,7 @@ export interface TableDefinition {
     /**
      * Primary key expression
      */
-    primaryKey?: string
+    primaryKey?: string | string[]
 
     /**
      * MergeTree setting

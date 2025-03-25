@@ -1,4 +1,9 @@
-import type { ColumnTransform, ColumnTransformNative } from '../transform/types'
+'use server'
+
+import type { 
+    ColumnTransform, 
+    ColumnTransformNative
+} from '../transform/types'
 
 import { 
     getColumnTypeDefinition,
@@ -69,11 +74,13 @@ export class Column<T extends ColumnType = ColumnType> {
             return this.stringToNative(value)
         }
         catch (error) {
-            if (this.def.defaultValue != null)
-                return this.def.defaultValue
-            // Indicates a nullable value
-            else if (this.def.optional)
+            // Return nullable if empty string is not a valid value
+            if (value == '' && this.def.optional)
                 return null
+            // If the default value should be returned on error
+            if (this.def.defaultValueOnError)
+                return this.def.defaultValue
+            // Throw the column error
             throw error
         }
     }

@@ -12,11 +12,14 @@ import {
 
 export function stringToString(fixed = false): ColumnTransformBuilder<StringColumnType> {
 
-    return function(def: StringDefinition) {
+    return function({ length, padLeft }: StringDefinition) {
         // If fixed length, validate source length
-        if (fixed && def.length) {
+        if (fixed && length) {
             return function (value: string) {
-                if (value.length != def.length)
+                if (value.length < length && padLeft) {
+                    return new Array(length - value.length).fill(padLeft).join('') + value
+                }
+                if (value.length != length)
                     throw new Error('string length')
                 return value
             }

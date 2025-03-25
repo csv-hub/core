@@ -5,15 +5,19 @@ import { InvalidEnumValueError } from '..'
 export function stringToEnum(bits: number) {
     const limit = 2 ** bits
 
-    return function(def: EnumDefinition) {
+    return function({ values, uppercase, lowercase }: EnumDefinition) {
         // TODO: Parser should throw error if the enum values are not defined
-        const valueSet = new Set<string>(Array.isArray(def.values) ? def.values : Object.keys(def.values))
+        const valueSet = new Set<string>(Array.isArray(values) ? values : Object.keys(values))
         if (valueSet.size > limit)
             throw new Error('Too many enum values specified')
 
         return function(value: string) {
+            if (uppercase)
+                value = value.toUpperCase()
+            else if (lowercase)
+                value = value.toLowerCase()
+
             if (! valueSet.has(value)) {
-                console.log({ value })
                 throw new InvalidEnumValueError(value, valueSet)
             }
             return value

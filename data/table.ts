@@ -1,5 +1,8 @@
+'use server'
+
 import fs from 'fs'
 import path from 'path'
+import chalk from 'chalk'
 
 import { 
     Database, 
@@ -17,8 +20,18 @@ import {
     ExistsTableCommand
 } from '.'
 
-import { TableDefinition, TableEngine, ColumnType, DefinitionOf } from '../types'
+import { 
+    TableTransportError
+} from './error'
+
+import { CSVFile } from '../csv'
+import type { CSVErrorLog } from '../csv/types'
+
+import type { TableDefinition, TableEngine, ColumnType, DefinitionOf, TableTransportOption } from '../types'
 import { AnyClass, AnyObject, ColumnObject } from './types'
+import { createTransport } from '../csv'
+import { createTemporaryDirectory } from '../csv/util/filesystem'
+import * as log from './log'
 
 /**
  * Represents a database table in ClickHouse.
@@ -112,6 +125,35 @@ export class Table<T extends AnyClass = AnyClass> {
             this.addColumn(column.name, column.type, column.getDefinition())
         }
         return this
+    }
+
+    async transport({ destination = createTemporaryDirectory('transport'), version, verbose }: TableTransportOption = {}) {
+        // Get transport definition from callback or directly from definition object
+        const definedTransport = (typeof this.def.transport === 'function') ? this.def.transport(version) : this.def.transport
+        const definedCSV = (typeof this.def.csv === 'function') ? this.def.csv(version) : this.def.csv
+        if (! definedTransport)
+            throw new TableTransportError(this)
+
+        log.tableTransportStart(this, verbose)
+        console.log(' > ' + destination)
+        await this.create().orReplace().execute()
+        
+        const transports = Array.isArray(definedTransport) ? definedTransport : [ definedTransport ]
+        const csvFiles = Array.isArray(definedCSV) ? definedCSV : [ definedCSV ]
+
+        for (const transportDef of transports) {
+            log.tableTransport(this, transportDef, verbose)
+            await createTransport(transportDef)({ destination, verbose })
+        }
+
+        log.tableTransportFinish(this, verbose)
+        const errorLog: CSVErrorLog = {}
+        for (const csvFile of csvFiles) {
+            const csv = new CSVFile(path.join(destination, csvFile))
+            csv.logErrors(errorLog)
+            await csv.insertIntoTable(this)
+        }
+        log.tableTransportErrors(errorLog)
     }
 
     async insertFromCSV(filename: string, withHeaders = true) {

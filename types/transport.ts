@@ -22,6 +22,9 @@ export interface TransportDefinition<T extends TransportType = TransportType> {
     // The destinations to write
     destination: TransportDestination | TransportDestination[]
 
+    // Optional description
+    description?: string
+
     // Automatically runs this transport on a schedule (number is in hours)
     update_frequency?: 'day' | 'week' | 'month' | 'year' | number
 
@@ -47,6 +50,12 @@ export interface TransportOption<T extends TransportType> {
     onTransportFinish?: (source: TransportSource<T>) => any
 
     // Print output to the console
+    verbose?: boolean
+}
+
+export interface TableTransportOption { 
+    destination?: string
+    version?: string
     verbose?: boolean
 }
 

@@ -4,7 +4,7 @@ import stream from 'stream'
 import csv from 'csv-parser'
 
 import type { Table, Column, AnyClass, AnyObject } from '../data'
-import { CSVRow, CSVRowReader, CSVHeaderMapper, CSVValueMapper } from './types'
+import { CSVRow, CSVRowReader, CSVHeaderMapper, CSVValueMapper, CSVErrorLog } from './types'
 
 export class CSVFile {
     filename: string
@@ -26,9 +26,7 @@ export class CSVFile {
     /**
      * If error tracking is enabled, an object will be initialized here
      */
-    error?: { [column: string]: {
-        [code: string]: Error[]
-    } }
+    errorLog?: CSVErrorLog
 
     /**
      * @desc    Constructs a "symbolic CSV file" which can be streamed into other data sources or directly read.
@@ -91,7 +89,8 @@ export class CSVFile {
         return new Promise((resolve, reject) => {
             csv.headers = addHeader
             csv.separator = mapSeparator
-
+            
+            fs.mkdirSync(path.dirname(destination), { recursive: true })
             const writeStream = fs.createWriteStream(destination)
             let headerIndex: string[] = []
             let rowLength = (addHeader ? addHeader.length : 0)
@@ -132,9 +131,8 @@ export class CSVFile {
     }
 
     async insertIntoTable<T extends AnyClass>(
-        table: Table<T>, 
-        csvFile: string,
-        batchSize: number = 1000
+        table: Table<T>,
+        batchSize: number = 100
     ): Promise<number> {
         const csv = this
     
@@ -179,6 +177,9 @@ export class CSVFile {
                         ingestBatch(batch)
                     
                     Promise.all(inserts).then(() => {
+                        if (ingested != rows) {
+                            console.log('Some rows not ingested', ingested, rows)
+                        }
                         resolve(rows)
                     })
                 },
@@ -221,6 +222,10 @@ export class CSVFile {
                         return column.transformFromString(value)
                     }
                     catch (error) {
+                        if (column.def.defaultValue)
+                            return column.def.defaultValue
+
+                        console.log(error, `${ header } = (${ value })`)
                         csv.addError(column, error)
                         return value
                     }
@@ -230,19 +235,30 @@ export class CSVFile {
         }
     }
 
-    logErrors(): this {
-        this.error = {}
+    logErrors(errorLog?: CSVErrorLog): this {
+        this.errorLog = errorLog || {}
         return this
     }
 
+    getErrorLog(): CSVErrorLog {
+        return this.errorLog
+    }
+
     private addError(column: Column, error: Error) {
-        if (! this.error || typeof error !== 'object' || ! error.hasOwnProperty('code'))
+        if (! this.errorLog || typeof error !== 'object')
             return
 
-        if (! this.error[column.name])
-            this.error[column.name] = {}
-        if (! this.error[column.name][error['code']])
-            this.error[column.name][error['code']] = []
-        this.error[column.name][error['code']].push(error)
+        const code: string = error['code'] || 'system'
+        if (! this.errorLog[column.name])
+            this.errorLog[column.name] = {}
+
+        const columnError = this.errorLog[column.name]
+        if (! columnError[code])
+            columnError[code] = []
+        columnError[code].push(error)
+    }
+
+    private displayErrors() {
+
     }
 }
