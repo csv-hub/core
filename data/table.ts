@@ -45,8 +45,7 @@ export class Table<T extends AnyClass = AnyClass> {
     // Table configuration
     private db: Database
     private name: string
-    def: TableDefinition
-    
+    private def: TableDefinition
 
     // Column and other property mappings
 	private column: Record<string, Column<any>> = {}
@@ -313,7 +312,7 @@ export class Table<T extends AnyClass = AnyClass> {
     getPrimaryKeyDefinition() {
         const primaryKey = this.def.primaryKey
         if (! primaryKey) return ''
-        return  `PRIMARY KEY(${ Array.isArray(primaryKey) ? primaryKey.join(', ') : primaryKey })`
+        return  `PRIMARY KEY (${ Array.isArray(primaryKey) ? primaryKey.join(', ') : primaryKey })`
     }
 
     /**

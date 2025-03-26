@@ -142,7 +142,7 @@ export class CSVFile {
 
     async insertIntoTable<T extends AnyClass>(
         table: Table<T>,
-        batchSize: number = 100
+        batchSize: number = 10000
     ): Promise<number> {
         const csv = this
     
@@ -173,7 +173,7 @@ export class CSVFile {
                  */
                 onRow(row) {
                     if (csv.rowError) {
-                        console.log(row)
+                        // console.log(row)
                         csv.rowError = false
                     }
                     else batch.push(row)

@@ -105,7 +105,13 @@ export interface BooleanDefinition {
 export interface EnumDefinition {
     values?: string[] | { [key: string]: number }
 
-    // Convert values to uppercase or lowercase first
+    emptyStringNull?: boolean
+
+    // Convert values with string transformations
+    substring?: number | [ number, number ]
+    replace?: RegExp
+    replaceWith?: string
+    
     uppercase?: boolean
     lowercase?: boolean
 }

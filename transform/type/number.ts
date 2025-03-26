@@ -135,10 +135,13 @@ export function stringToBigInt(bits: number, unsigned: boolean = false): ColumnT
     const upper = unsigned ? bound : (bound / BigInt(2))
     const lower = unsigned ? BigInt(0) : (bound / BigInt(-2))
 
-    return function (def: NumberDefinition) {
+    return function ({ removeSign }: NumberDefinition) {
         // TODO: BigInt upper and lower bound from definition
 
         return function(value: string): BigInt {
+            if (removeSign && value.startsWith('-'))
+                value = value.substring(1)
+            
             try {
                 const parsed = BigInt(value)
                 if (parsed < lower)
